@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Delicacy_NFU</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="breakfast">早餐</string>
+    <string name="lunch">正餐</string>
+    <string name="dessert">小吃</string>
+    <string name="night">霄夜</string>
+    <string name="drink">飲料</string>
+    <string name="search_title">Search</string>
+    <string name="gatcha_title">Gatcha</string>
+</resources>
