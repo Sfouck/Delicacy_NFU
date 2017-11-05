@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
@@ -14,7 +15,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -27,6 +28,10 @@ import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -35,37 +40,47 @@ public class MainActivity extends AppCompatActivity
     private Toolbar mToolbar;
     private DrawerLayout mDrawerLayout;
     private NavigationView mNavigationView;
-    private RecyclerAdapter mRecyclerAdapter;
     private RecyclerView mRecyclerList;
+    private ActionBarDrawerToggle mDrawerToggle;
+    private MainViewAdapter mMainViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mToolbar = findViewById(R.id.toolbar);
+        //init
+        initialize();
+
+        //Toolbar
         setSupportActionBar(mToolbar);
 
-        ArrayList<String> myDataset = new ArrayList<>();
-        for(int i = 0; i < 100; i++){
-            myDataset.add(i + "");
-        }
-        mRecyclerAdapter = new RecyclerAdapter(myDataset);
-        mRecyclerList = findViewById(R.id.list_view);
-        final LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        //Main View
+        GridLayoutManager layoutManager = new GridLayoutManager(this,2);
         mRecyclerList.setLayoutManager(layoutManager);
-        mRecyclerList.setAdapter(mRecyclerAdapter);
+        setMainView(10,R.drawable.ic_search_commit);
 
-
-        mDrawerLayout = findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+        //Drawer
+        mDrawerToggle = new ActionBarDrawerToggle(
                 this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        mDrawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mDrawerToggle.syncState();
 
-        mNavigationView = findViewById(R.id.nav_view);
+        //Navigation
         mNavigationView.setNavigationItemSelectedListener(this);
+    }
+
+    private void initialize(){
+        mToolbar = findViewById(R.id.app_bar_mainToolbar);
+        mRecyclerList = findViewById(R.id.main_view);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
+        mNavigationView = findViewById(R.id.nav_view);
+        ArrayList<String> emptyList = new ArrayList<>();
+        emptyList.add("");
+        ArrayList<Integer> emptyList2 = new ArrayList<>();
+        emptyList2.add(R.drawable.ic_action_gatcha);
+        mMainViewAdapter = new MainViewAdapter(emptyList,emptyList2);
+        mRecyclerList.setAdapter(mMainViewAdapter);
     }
 
     @Override
@@ -113,6 +128,44 @@ public class MainActivity extends AppCompatActivity
         });
         return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // The action bar home/up actionshould open or close the drawer.
+        // ActionBarDrawerToggle will takecare of this.
+        if(mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        //处理其他菜单点击事件
+        return super.onOptionsItemSelected(item);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_breakfast) {
+            // Intent intent=new Intent();
+            //intent.setClass(this,BreakfastActivity.class);
+            //startActivity(intent);
+            setMainView(1,R.drawable.ic_menu_camera);
+        } else if (id == R.id.nav_lunch) {
+            setMainView(2,R.drawable.ic_menu_gallery);
+        } else if (id == R.id.nav_dessert) {
+            setMainView(3,R.drawable.ic_menu_send);
+        } else if (id == R.id.nav_night) {
+            setMainView(4,R.drawable.ic_menu_share);
+        } else if (id == R.id.nav_drink) {
+            setMainView(5,R.drawable.ic_search_commit);
+        }
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
 
     public void animateSearchToolbar(int numberOfMenuIcon, boolean containsOverflow, boolean show) {
 
@@ -194,29 +247,16 @@ public class MainActivity extends AppCompatActivity
         return result;
     }
 
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_breakfast) {
-            // Intent intent=new Intent();
-            //intent.setClass(this,BreakfastActivity.class);
-            //startActivity(intent);
-        } else if (id == R.id.nav_lunch) {
-
-        } else if (id == R.id.nav_dessert) {
-
-        } else if (id == R.id.nav_night) {
-
-        } else if (id == R.id.nav_drink) {
-
+    private void setMainView(int testNum,int imgNum){
+        ArrayList<String> title = new ArrayList<>();
+        for(int i = 0; i < testNum; i++){
+            title.add(i + "");
         }
+        ArrayList<Integer> img = new ArrayList<>();
+        for(int i = 0; i < testNum; i++){
+            img.add(imgNum);
+        }
+        mMainViewAdapter.update(title,img);
 
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
     }
 }
