@@ -7,10 +7,10 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.util.Pair;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -28,10 +28,6 @@ import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -75,11 +71,9 @@ public class MainActivity extends AppCompatActivity
         mRecyclerList = findViewById(R.id.main_view);
         mDrawerLayout = findViewById(R.id.drawer_layout);
         mNavigationView = findViewById(R.id.nav_view);
-        ArrayList<String> emptyList = new ArrayList<>();
-        emptyList.add("");
-        ArrayList<Integer> emptyList2 = new ArrayList<>();
-        emptyList2.add(R.drawable.ic_action_gatcha);
-        mMainViewAdapter = new MainViewAdapter(emptyList,emptyList2);
+        ArrayList<Pair<String,Integer>> DataSet = new ArrayList<>();
+        DataSet.add(new Pair<>("flower",R.drawable.flower));
+        mMainViewAdapter = new MainViewAdapter(DataSet);
         mRecyclerList.setAdapter(mMainViewAdapter);
     }
 
@@ -88,14 +82,14 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        }else {
             super.onBackPressed();
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
+        getMenuInflater().inflate(R.menu.activity_main_toolbar_menu, menu);
 
         mSearchItem = menu.findItem(R.id.m_search);
 
@@ -129,17 +123,6 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // The action bar home/up actionshould open or close the drawer.
-        // ActionBarDrawerToggle will takecare of this.
-        if(mDrawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-        //处理其他菜单点击事件
-        return super.onOptionsItemSelected(item);
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -147,18 +130,19 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_breakfast) {
-            // Intent intent=new Intent();
-            //intent.setClass(this,BreakfastActivity.class);
-            //startActivity(intent);
             setMainView(1,R.drawable.ic_menu_camera);
         } else if (id == R.id.nav_lunch) {
             setMainView(2,R.drawable.ic_menu_gallery);
         } else if (id == R.id.nav_dessert) {
-            setMainView(3,R.drawable.ic_menu_send);
+            ArrayList<Pair<String,Integer>> DataSet = new ArrayList<>();
+            DataSet.add(new Pair<>("flower",R.drawable.flower));
+            DataSet.add(new Pair<>("cat",R.drawable.cat));
+            mMainViewAdapter.update(DataSet);
         } else if (id == R.id.nav_night) {
-            setMainView(4,R.drawable.ic_menu_share);
+            setMainView(4,R.drawable.flower);
         } else if (id == R.id.nav_drink) {
-            setMainView(5,R.drawable.ic_search_commit);
+            setMainView(5,R.drawable.cat);
+
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -234,7 +218,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
     private boolean isRtl(Resources resources) {
         return resources.getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
     }
@@ -248,15 +231,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setMainView(int testNum,int imgNum){
-        ArrayList<String> title = new ArrayList<>();
+        ArrayList<Pair<String,Integer>> DataSet = new ArrayList<>();
         for(int i = 0; i < testNum; i++){
-            title.add(i + "");
+            DataSet.add(new Pair<>(i+"",imgNum));
         }
-        ArrayList<Integer> img = new ArrayList<>();
-        for(int i = 0; i < testNum; i++){
-            img.add(imgNum);
-        }
-        mMainViewAdapter.update(title,img);
+        mMainViewAdapter.update(DataSet);
 
     }
 }
