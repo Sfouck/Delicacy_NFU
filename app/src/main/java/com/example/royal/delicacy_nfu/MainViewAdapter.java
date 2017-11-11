@@ -20,7 +20,7 @@ import java.util.List;
  */
 
 public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyViewHolder> {
-    private List<Pair<String,Integer>> dataList;
+    private List<Pair<String, Integer>> dataList;
 
     class MyViewHolder extends RecyclerView.ViewHolder {
         private TextView mTextView;
@@ -33,7 +33,7 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
         }
     }
 
-    MainViewAdapter(List<Pair<String,Integer>> data) {
+    MainViewAdapter(List<Pair<String, Integer>> data) {
         this.dataList = data;
     }
 
@@ -41,8 +41,7 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
     public MainViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.shop_card_view, parent, false);
-        MyViewHolder viewHolder  = new MyViewHolder(view);
-        return viewHolder ;
+        return new MyViewHolder(view);
     }
 
     @Override
@@ -52,24 +51,31 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
 
         holder.mTextView.setText(shopName);
 
-        holder.mThumbnail.setImageResource(imageID);
-        holder.mThumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        GlideApp.with(holder.itemView.getContext())
+                .load(imageID)
+                .error(R.drawable.cat)
+                .placeholder(R.drawable.ic_action_gatcha)
+                .thumbnail(0.1f)
+                .centerCrop()
+                .fitCenter()
+                .into(holder.mThumbnail);
+
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View itemview) {
                 Context mContext = itemview.getContext();
-                Intent intent = new Intent(mContext,DetailActivity.class);
-                intent.putExtra("ShopName",shopName);
-                intent.putExtra("ShopImage",imageID);
+                Intent intent = new Intent(mContext, DetailActivity.class);
+                intent.putExtra("ShopNumber", position);
+                intent.putExtra("ShopName", shopName);
+                intent.putExtra("ShopImage", imageID);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     String trans = mContext.getResources().getString(R.string.picture_transition_name);
                     ActivityOptionsCompat option = ActivityOptionsCompat
-                            .makeSceneTransitionAnimation((Activity)mContext,holder.mThumbnail, trans);
-                    mContext.startActivity(intent,option.toBundle());
-                }
-                else {
+                            .makeSceneTransitionAnimation((Activity) mContext, holder.mThumbnail, trans);
+                    mContext.startActivity(intent, option.toBundle());
+                } else {
                     mContext.startActivity(intent);
                 }
             }
@@ -81,7 +87,7 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
         return (dataList.size());
     }
 
-    void update(List<Pair<String,Integer>> data){
+    void update(List<Pair<String, Integer>> data) {
         dataList.clear();
         dataList.addAll(data);
         notifyDataSetChanged();

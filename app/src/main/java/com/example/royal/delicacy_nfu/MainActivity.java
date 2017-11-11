@@ -2,9 +2,11 @@ package com.example.royal.delicacy_nfu;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -17,7 +19,9 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,6 +32,7 @@ import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -39,6 +44,7 @@ public class MainActivity extends AppCompatActivity
     private RecyclerView mRecyclerList;
     private ActionBarDrawerToggle mDrawerToggle;
     private MainViewAdapter mMainViewAdapter;
+    private ShopDataAdapter mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,9 +58,9 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(mToolbar);
 
         //Main View
-        GridLayoutManager layoutManager = new GridLayoutManager(this,2);
+        GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
         mRecyclerList.setLayoutManager(layoutManager);
-        setMainView(10,R.drawable.ic_search_commit);
+        setMainView("早餐");
 
         //Drawer
         mDrawerToggle = new ActionBarDrawerToggle(
@@ -66,15 +72,18 @@ public class MainActivity extends AppCompatActivity
         mNavigationView.setNavigationItemSelectedListener(this);
     }
 
-    private void initialize(){
+    private void initialize() {
         mToolbar = findViewById(R.id.app_bar_mainToolbar);
         mRecyclerList = findViewById(R.id.main_view);
         mDrawerLayout = findViewById(R.id.drawer_layout);
         mNavigationView = findViewById(R.id.nav_view);
-        ArrayList<Pair<String,Integer>> DataSet = new ArrayList<>();
-        DataSet.add(new Pair<>("flower",R.drawable.flower));
+        ArrayList<Pair<String, Integer>> DataSet = new ArrayList<>();
+        DataSet.add(new Pair<>("flower", R.drawable.flower));
         mMainViewAdapter = new MainViewAdapter(DataSet);
         mRecyclerList.setAdapter(mMainViewAdapter);
+        this.deleteDatabase("ShopDataBase.sqlite");
+        mDbHelper = new ShopDataAdapter(this);
+        mDbHelper.createDatabase();
     }
 
     @Override
@@ -82,7 +91,7 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        }else {
+        } else {
             super.onBackPressed();
         }
     }
@@ -91,6 +100,13 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_main_toolbar_menu, menu);
 
+        SearchManager searchManager =
+                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView =
+                (SearchView) menu.findItem(R.id.search_view).getActionView();
+        searchView.setSearchableInfo(
+                searchManager.getSearchableInfo(getComponentName()));
+
         mSearchItem = menu.findItem(R.id.m_search);
 
         mSearchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
@@ -98,7 +114,7 @@ public class MainActivity extends AppCompatActivity
             public boolean onMenuItemActionCollapse(MenuItem item) {
                 // Called when SearchView is collapsing
                 if (mSearchItem.isActionViewExpanded()) {
-                    animateSearchToolbar(1, false, false);
+                    animateSearchToolbar(3, false, false);
                 }
                 return true;
             }
@@ -106,7 +122,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public boolean onMenuItemActionExpand(MenuItem item) {
                 // Called when SearchView is expanding
-                animateSearchToolbar(1, true, true);
+                animateSearchToolbar(2, true, true);
                 return true;
             }
         });
@@ -116,7 +132,7 @@ public class MainActivity extends AppCompatActivity
         mGatchaItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                Snackbar.make(findViewById(R.id.drawer_layout),"gatchatest", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(findViewById(R.id.drawer_layout), "gatchatest", Snackbar.LENGTH_SHORT).show();
                 return true;
             }
         });
@@ -129,20 +145,26 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_breakfast) {
-            setMainView(1,R.drawable.ic_menu_camera);
-        } else if (id == R.id.nav_lunch) {
-            setMainView(2,R.drawable.ic_menu_gallery);
-        } else if (id == R.id.nav_dessert) {
-            ArrayList<Pair<String,Integer>> DataSet = new ArrayList<>();
-            DataSet.add(new Pair<>("flower",R.drawable.flower));
-            DataSet.add(new Pair<>("cat",R.drawable.cat));
-            mMainViewAdapter.update(DataSet);
-        } else if (id == R.id.nav_night) {
-            setMainView(4,R.drawable.flower);
-        } else if (id == R.id.nav_drink) {
-            setMainView(5,R.drawable.cat);
-
+        switch (id) {
+            case R.id.nav_breakfast:
+                showData("早餐");
+                setMainView("早餐");
+                break;
+            case R.id.nav_lunch:
+                showData("正餐");
+                break;
+            case R.id.nav_dessert:
+                ArrayList<Pair<String, Integer>> DataSet = new ArrayList<>();
+                DataSet.add(new Pair<>("flower", R.drawable.flower));
+                DataSet.add(new Pair<>("cat", R.drawable.cat));
+                mMainViewAdapter.update(DataSet);
+                break;
+            case R.id.nav_night:
+                showData("宵夜");
+                break;
+            case R.id.nav_drink:
+                showData("飲料");
+                break;
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -150,6 +172,59 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+
+    private void showData(String meal) {
+        mDbHelper.open();
+        Cursor testdata = mDbHelper.getTableData(meal);
+        Log.d("testdata", testdata.getCount() + "");
+
+        if (testdata.getCount() > 0) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("總共有 ").append((testdata.getCount())).append("筆資料\n");
+            int index = 0;
+            testdata.moveToFirst();
+            stringBuilder.append(testdata.getColumnName(index)).append("\n");
+            do {
+                stringBuilder.append(testdata.getString(index)).append("\n");
+            } while (testdata.moveToNext());
+            Log.d("testdata", stringBuilder.toString());
+        }
+        mDbHelper.close();
+    }
+
+    private ArrayList getShopData(String meal) {
+        ArrayList<Pair<String, Integer>> DataSet = new ArrayList<>();
+
+        mDbHelper.open();
+        Cursor shopdata = mDbHelper.getTableData(meal);
+
+        if (shopdata.getCount() > 0) {
+            String shopName;
+            int shopImgID;
+            int rowIndex = 1;
+            shopdata.moveToFirst();
+            do {
+                shopName = shopdata.getString(0);
+                shopImgID = getShopImgID(
+                        "breakfast_" + String.format(Locale.CHINESE, "%03d", rowIndex) + "_01"
+                );
+                DataSet.add(Pair.create(shopName, shopImgID));
+                rowIndex++;
+            } while (shopdata.moveToNext());
+        }
+        mDbHelper.close();
+        return DataSet;
+    }
+
+    private int getShopImgID(String name) {
+        int resID = 0;
+        try {
+            resID = getResources().getIdentifier(name, "drawable", getApplicationInfo().packageName);
+        } catch (Exception e) {
+            Log.d("test.getShopImgID", "e=" + e);
+        }
+        return (resID > 0 ? resID : R.drawable.cat);
+    }
 
     public void animateSearchToolbar(int numberOfMenuIcon, boolean containsOverflow, boolean show) {
 
@@ -214,7 +289,7 @@ public class MainActivity extends AppCompatActivity
                 mToolbar.startAnimation(animationSet);
             }
 
-            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.quantum_grey_600));
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.transparent));
         }
     }
 
@@ -230,12 +305,9 @@ public class MainActivity extends AppCompatActivity
         return result;
     }
 
-    private void setMainView(int testNum,int imgNum){
-        ArrayList<Pair<String,Integer>> DataSet = new ArrayList<>();
-        for(int i = 0; i < testNum; i++){
-            DataSet.add(new Pair<>(i+"",imgNum));
-        }
-        mMainViewAdapter.update(DataSet);
-
+    private void setMainView(String meal) {
+        ArrayList<Pair<String, Integer>> ShopDataList;
+        ShopDataList = getShopData(meal);
+        mMainViewAdapter.update(ShopDataList);
     }
 }
