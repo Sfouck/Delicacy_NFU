@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/detail_appbar"
+    android:id="@+id/gatcha_appbar"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:fitsSystemWindows="true"
-    tools:context="com.example.royal.delicacy_nfu.DetailActivity">
+    tools:context="com.example.royal.delicacy_nfu.GatchaActivity">
 
     <android.support.v7.widget.Toolbar
-        android:id="@+id/detail_Toolbar"
+        android:id="@+id/gatcha_Toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        android:theme="@style/DetailToolbarTheme"/>
+        android:theme="@style/GatchaToolbarTheme"/>
 </android.support.design.widget.AppBarLayout>

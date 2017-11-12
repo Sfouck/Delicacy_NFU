@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.util.Pair;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,7 +20,7 @@ import java.util.List;
  */
 
 public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyViewHolder> {
-    private List<Pair<String, Integer>> dataList;
+    private List<ArrayList<String>> dataList;
 
     class MyViewHolder extends RecyclerView.ViewHolder {
         private TextView mTextView;
@@ -33,7 +33,7 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
         }
     }
 
-    MainViewAdapter(List<Pair<String, Integer>> data) {
+    MainViewAdapter(List<ArrayList<String>> data) {
         this.dataList = data;
     }
 
@@ -46,8 +46,9 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, final int position) {
-        final String shopName = dataList.get(position).first;
-        final Integer imageID = dataList.get(position).second;
+        final Integer shopNumber = Integer.valueOf(dataList.get(position).get(0));
+        final String shopName = dataList.get(position).get(1);
+        final Integer imageID = Integer.valueOf(dataList.get(position).get(2));
 
         holder.mTextView.setText(shopName);
 
@@ -66,7 +67,7 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
             public void onClick(View itemview) {
                 Context mContext = itemview.getContext();
                 Intent intent = new Intent(mContext, DetailActivity.class);
-                intent.putExtra("ShopNumber", position);
+                intent.putExtra("ShopNumber", shopNumber);
                 intent.putExtra("ShopName", shopName);
                 intent.putExtra("ShopImage", imageID);
 
@@ -87,11 +88,10 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
         return (dataList.size());
     }
 
-    void update(List<Pair<String, Integer>> data) {
+    void update(List<ArrayList<String>> data) {
         dataList.clear();
         dataList.addAll(data);
         notifyDataSetChanged();
     }
-
 
 }

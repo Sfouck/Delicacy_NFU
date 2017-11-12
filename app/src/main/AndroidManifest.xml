@@ -13,18 +13,37 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.Main">
+            android:theme="@style/AppTheme.Main"
+            android:launchMode="singleTop"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.SEARCH" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <meta-data android:name="android.app.searchable"
+
+            <meta-data
+                android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
 
         <activity
             android:name=".DetailActivity"
-            android:theme="@style/AppTheme.Detail"/>
+            android:theme="@style/AppTheme.Detail" />
+
+        <activity
+            android:name=".GatchaActivity"
+            android:theme="@style/AppTheme.Gatcha" />
+
+        <provider
+            android:name=".ShopSearchSuggestions"
+            android:authorities="com.example.royal.delicacy_nfu.ShopSearchSuggestions"
+            android:readPermission="com.example.royal.delicacy_nfu.ShopSearchSuggestions.READ_MY_DATA"
+            android:writePermission="com.example.royal.delicacy_nfu.ShopSearchSuggestions.WRITE_MY_DATA">
+            <path-permission
+                android:pathPrefix="/search_suggest_query"
+                android:readPermission="android.permission.GLOBAL_SEARCH" />
+        </provider>
     </application>
 
 </manifest>

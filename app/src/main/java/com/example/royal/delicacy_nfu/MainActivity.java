@@ -4,15 +4,17 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.SearchRecentSuggestions;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.util.Pair;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -32,7 +34,10 @@ import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -44,12 +49,14 @@ public class MainActivity extends AppCompatActivity
     private RecyclerView mRecyclerList;
     private ActionBarDrawerToggle mDrawerToggle;
     private MainViewAdapter mMainViewAdapter;
-    private ShopDataAdapter mDbHelper;
+    private SearchView mSearchView;
+    private HashMap<String, String> mealList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
         //init
         initialize();
@@ -70,20 +77,35 @@ public class MainActivity extends AppCompatActivity
 
         //Navigation
         mNavigationView.setNavigationItemSelectedListener(this);
+
+        //Intent
+        handleIntent(getIntent());
     }
 
     private void initialize() {
+        mealList = new HashMap<>();
+        String[][] temp = {
+                {"breakfast", "早餐"},
+                {"lunch", "正餐"},
+                {"snack", "小吃"},
+                {"supper", "宵夜"},
+                {"drink", "飲料"}
+        };
+        for (String[] meal : temp) {
+            mealList.put(meal[1], meal[0]);
+        }
         mToolbar = findViewById(R.id.app_bar_mainToolbar);
         mRecyclerList = findViewById(R.id.main_view);
         mDrawerLayout = findViewById(R.id.drawer_layout);
         mNavigationView = findViewById(R.id.nav_view);
-        ArrayList<Pair<String, Integer>> DataSet = new ArrayList<>();
-        DataSet.add(new Pair<>("flower", R.drawable.flower));
-        mMainViewAdapter = new MainViewAdapter(DataSet);
+        ArrayList<String> emptyList = new ArrayList<>();
+        emptyList.add("0");
+        emptyList.add("space");
+        emptyList.add(String.valueOf(R.drawable.cat));
+        List<ArrayList<String>> dataList = new ArrayList<>();
+        dataList.add(emptyList);
+        mMainViewAdapter = new MainViewAdapter(dataList);
         mRecyclerList.setAdapter(mMainViewAdapter);
-        this.deleteDatabase("ShopDataBase.sqlite");
-        mDbHelper = new ShopDataAdapter(this);
-        mDbHelper.createDatabase();
     }
 
     @Override
@@ -91,9 +113,50 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
+        } else if (mSearchItem.isActionViewExpanded()) {
+            animateSearchToolbar(3, false, false);
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        setIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        String TAG = "handleIntent";
+        Log.d(TAG, "handleIntent: ");
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            Log.d(TAG, "handleIntent: ACTION_SEARCH");
+            String searchQuery = intent.getStringExtra(SearchManager.QUERY);
+            SearchRecentSuggestions suggestions = new SearchRecentSuggestions(getApplicationContext(),
+                    ShopSearchSuggestions.AUTHORITY, ShopSearchSuggestions.MODE);
+            suggestions.saveRecentQuery(searchQuery, null);
+            mMainViewAdapter.update(searchShopByName(searchQuery));
+        } else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Log.d(TAG, "handleIntent: ACTION_VIEW");
+            Uri detailUri = intent.getData();
+
+            try {
+                Log.d("handleIntent", intent.getData().toString());
+                long id = Long.parseLong(detailUri.getLastPathSegment());
+                Log.d("handleIntent", id + "");
+            } catch (Exception e) {
+                Log.e(TAG, e.toString());
+            }
+        }else {
+            Log.d(TAG, "ACTION is " + intent.getAction());
+        }
+    }
+
+
+    @Override
+    public boolean onSearchRequested() {
+        Log.d("onSearchRequested", "true");
+        return super.onSearchRequested();
     }
 
     @Override
@@ -102,10 +165,36 @@ public class MainActivity extends AppCompatActivity
 
         SearchManager searchManager =
                 (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView =
-                (SearchView) menu.findItem(R.id.search_view).getActionView();
-        searchView.setSearchableInfo(
-                searchManager.getSearchableInfo(getComponentName()));
+        mSearchView =
+                (SearchView) menu.findItem(R.id.m_search).getActionView();
+        if (mSearchView != null) {
+            try {
+                mSearchView.setSearchableInfo(
+                        searchManager.getSearchableInfo(getComponentName()));
+            } catch (Exception e) {
+                Log.d("SearchableInfo", "e=" + e);
+            }
+
+            SearchView.OnQueryTextListener queryTextListener = new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    Snackbar.make(findViewById(R.id.main_view), query, Snackbar.LENGTH_SHORT).show();
+                    Intent intent = new Intent();
+                    intent.putExtra(SearchManager.QUERY, query);
+                    intent.setAction(Intent.ACTION_SEARCH);
+                    onNewIntent(intent);
+                    return true;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    Snackbar.make(findViewById(R.id.main_view), newText, Snackbar.LENGTH_SHORT).show();
+                    return true;
+                }
+            };
+            mSearchView.setOnQueryTextListener(queryTextListener);
+        }
+
 
         mSearchItem = menu.findItem(R.id.m_search);
 
@@ -132,7 +221,9 @@ public class MainActivity extends AppCompatActivity
         mGatchaItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                Snackbar.make(findViewById(R.id.drawer_layout), "gatchatest", Snackbar.LENGTH_SHORT).show();
+                Intent intent = new Intent(getApplicationContext(),GatchaActivity.class);
+                startActivity(intent);
+//                Snackbar.make(findViewById(R.id.drawer_layout), "gatchatest", Snackbar.LENGTH_SHORT).show();
                 return true;
             }
         });
@@ -147,23 +238,15 @@ public class MainActivity extends AppCompatActivity
 
         switch (id) {
             case R.id.nav_breakfast:
-                showData("早餐");
                 setMainView("早餐");
                 break;
             case R.id.nav_lunch:
-                showData("正餐");
                 break;
             case R.id.nav_dessert:
-                ArrayList<Pair<String, Integer>> DataSet = new ArrayList<>();
-                DataSet.add(new Pair<>("flower", R.drawable.flower));
-                DataSet.add(new Pair<>("cat", R.drawable.cat));
-                mMainViewAdapter.update(DataSet);
                 break;
             case R.id.nav_night:
-                showData("宵夜");
                 break;
             case R.id.nav_drink:
-                showData("飲料");
                 break;
         }
 
@@ -172,58 +255,106 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    private List<ArrayList<String>> searchShopByName(String query) {
+        List<ArrayList<String>> searchResult = new ArrayList<>();
+        Cursor shopData;
+        String sqlCmd;
+        ArrayList<String> rowValue;
+        String[] queryList = query.trim().split(" ");
+        int querySize = queryList.length;
 
-    private void showData(String meal) {
+        ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
+        mDbHelper.createDatabase();
         mDbHelper.open();
-        Cursor testdata = mDbHelper.getTableData(meal);
-        Log.d("testdata", testdata.getCount() + "");
 
-        if (testdata.getCount() > 0) {
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("總共有 ").append((testdata.getCount())).append("筆資料\n");
-            int index = 0;
-            testdata.moveToFirst();
-            stringBuilder.append(testdata.getColumnName(index)).append("\n");
-            do {
-                stringBuilder.append(testdata.getString(index)).append("\n");
-            } while (testdata.moveToNext());
-            Log.d("testdata", stringBuilder.toString());
+        for (Map.Entry<String, String> meal : mealList.entrySet()) {
+            try {
+                if (querySize > 1) {
+                    sqlCmd = "SELECT _ID,店名 FROM " + meal.getKey()
+                            + " WHERE 店名 LIKE '%" + queryList[0].trim() + "%'";
+                    for (int i=1;i<querySize;i++){
+                        sqlCmd += ("OR 店名 LIKE '%" + queryList[i] + "%'");
+                    }
+                }else if (querySize == 1){
+                    sqlCmd = "SELECT _ID,店名 FROM " + meal.getKey()
+                            + " WHERE 店名 LIKE '%" + query.trim() + "%'";
+                }else{
+                    sqlCmd = "SELECT _ID,店名 FROM 早餐";
+                }
+
+                Log.d("searchShopByName", sqlCmd);
+                shopData = mDbHelper.getDataBySQL(sqlCmd);
+                shopData.moveToFirst();
+                String shopName;
+                int shopImgID;
+                int rowIndex;
+                do {
+                    rowValue = new ArrayList<>();
+                    rowIndex = shopData.getInt(0);
+                    shopName = shopData.getString(1);
+                    shopImgID = getShopImgID(meal.getValue(), rowIndex, 1);
+
+                    rowValue.add(String.valueOf(rowIndex));
+                    rowValue.add(shopName);
+                    rowValue.add(String.valueOf(shopImgID));
+                    searchResult.add(rowValue);
+                } while (shopData.moveToNext());
+            } catch (Exception e) {
+                Log.e("searchShopByName", "Exception = " + e);
+            }
         }
+
         mDbHelper.close();
+        this.deleteDatabase("ShopDataBase.sqlite");
+        return searchResult;
     }
 
-    private ArrayList getShopData(String meal) {
-        ArrayList<Pair<String, Integer>> DataSet = new ArrayList<>();
+    private List<ArrayList<String>> getShopData(String meal) {
+        List<ArrayList<String>> DataSet = new ArrayList<>();
 
+        ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
+        mDbHelper.createDatabase();
         mDbHelper.open();
         Cursor shopdata = mDbHelper.getTableData(meal);
 
         if (shopdata.getCount() > 0) {
             String shopName;
             int shopImgID;
-            int rowIndex = 1;
+            int rowIndex;
+            ArrayList<String> rowValue ;
             shopdata.moveToFirst();
             do {
-                shopName = shopdata.getString(0);
-                shopImgID = getShopImgID(
-                        "breakfast_" + String.format(Locale.CHINESE, "%03d", rowIndex) + "_01"
-                );
-                DataSet.add(Pair.create(shopName, shopImgID));
-                rowIndex++;
+                rowValue = new ArrayList<>();
+                rowIndex = shopdata.getInt(0);
+                shopName = shopdata.getString(1);
+                shopImgID = getShopImgID(mealList.get(meal), rowIndex, 1);
+
+                rowValue.add(String.valueOf(rowIndex));
+                rowValue.add(shopName);
+                rowValue.add(String.valueOf(shopImgID));
+                DataSet.add(rowValue);
             } while (shopdata.moveToNext());
         }
+
         mDbHelper.close();
+        this.deleteDatabase("ShopDataBase.sqlite");
         return DataSet;
     }
 
-    private int getShopImgID(String name) {
+    private int getShopImgID(String meal, int index, int num) {
         int resID = 0;
+        String path = meal + "_" + String.format(Locale.CHINESE, "%03d", index)
+                + "_" + String.format(Locale.CHINESE, "%02d", num);
         try {
-            resID = getResources().getIdentifier(name, "drawable", getApplicationInfo().packageName);
+            resID = getResources().getIdentifier(path, "drawable", getApplicationInfo().packageName);
         } catch (Exception e) {
             Log.d("test.getShopImgID", "e=" + e);
         }
         return (resID > 0 ? resID : R.drawable.cat);
+    }
+
+    private void setMainView(String meal) {
+        mMainViewAdapter.update(getShopData(meal));
     }
 
     public void animateSearchToolbar(int numberOfMenuIcon, boolean containsOverflow, boolean show) {
@@ -305,9 +436,5 @@ public class MainActivity extends AppCompatActivity
         return result;
     }
 
-    private void setMainView(String meal) {
-        ArrayList<Pair<String, Integer>> ShopDataList;
-        ShopDataList = getShopData(meal);
-        mMainViewAdapter.update(ShopDataList);
-    }
+
 }

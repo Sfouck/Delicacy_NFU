@@ -37,8 +37,8 @@ public class ShopDataAdapter {
     public ShopDataAdapter open() throws SQLException {
         try {
             mDbHelper.openDataBase();
-            mDbHelper.close();
             mDb = mDbHelper.getReadableDatabase();
+            mDb.beginTransaction();
         } catch (SQLException mSQLException) {
             Log.e(TAG, "open >>" + mSQLException.toString());
             throw mSQLException;
@@ -47,6 +47,8 @@ public class ShopDataAdapter {
     }
 
     public void close() {
+        mDb.endTransaction();
+        mDb.close();
         mDbHelper.close();
     }
 
@@ -55,6 +57,21 @@ public class ShopDataAdapter {
             String sql = "SELECT * FROM '" + mealName + "'";
 
             Cursor mCur = mDb.rawQuery(sql, null);
+            if (mCur != null) {
+                mCur.moveToFirst();
+            }
+            return mCur;
+        } catch (SQLException mSQLException) {
+            Log.e(TAG, "getTableData >>" + mSQLException.toString());
+            throw mSQLException;
+        }
+    }
+
+    public Cursor getDataBySQL(String sqlCmd){
+        try {
+//            mDb.beginTransaction();
+            Cursor mCur = mDb.rawQuery(sqlCmd, null);
+//            mDb.endTransaction();
             if (mCur != null) {
                 mCur.moveToFirst();
             }

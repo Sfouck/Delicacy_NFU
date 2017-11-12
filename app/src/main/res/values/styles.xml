@@ -17,6 +17,7 @@
 
     <style name="AppTheme.Main" parent="AppTheme.NoActionBar"/>
     <style name="AppTheme.Detail" parent="AppTheme.NoActionBar"/>
+    <style name="AppTheme.Gatcha" parent="AppTheme.NoActionBar"/>
 
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
@@ -48,6 +49,10 @@
         <item name="searchViewStyle">@style/SearchViewTheme</item>
     </style>
     <style name="DetailToolbarTheme" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:textColorPrimary">#fff</item>
+        <item name="android:textColor">#fff</item>
+    </style>
+    <style name="GatchaToolbarTheme" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:textColorPrimary">#fff</item>
         <item name="android:textColor">#fff</item>
     </style>

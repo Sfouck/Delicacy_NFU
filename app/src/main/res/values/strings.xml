@@ -12,4 +12,7 @@
     <string name="drink">飲料</string>
     <string name="search_title">Search</string>
     <string name="gatcha_title">Gatcha</string>
+    <string name="search_hint">搜尋</string>
+    <string name="toolbar_title_gatcha">美食抽抽樂</string>
+    <string name="gatcha_button_title">開抽</string>
 </resources>

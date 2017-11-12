@@ -1,6 +1,7 @@
 package com.example.royal.delicacy_nfu;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -11,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 
 
@@ -24,6 +26,7 @@ public class DetailActivity extends AppCompatActivity {
     private ImageView mImageView_Shop;
     private ViewPager mViewPager_Slideshow;
     private ShopDataAdapter mDbHelper;
+    private HashMap<String, String> mealList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,10 +36,16 @@ public class DetailActivity extends AppCompatActivity {
         initialize();
 
         Intent intent = getIntent();
-        int shopNum = intent.getIntExtra("ShopNumber", 0) + 1;
+        int shopNum = intent.getIntExtra("ShopNumber", 0);
         String shopName = intent.getStringExtra("ShopName");
-        int imageID = intent.getIntExtra("ShopImage", R.drawable.ic_menu_camera);
-
+        int imageID = intent.getIntExtra("ShopImage", R.drawable.cat);
+        String mealName;
+        if (imageID == R.drawable.cat) {
+            mealName = "cat";
+        } else {
+            mealName = getMealName(getResources().getResourceName(imageID));
+        }
+        Log.d("mealName", mealName);
 
         //Toolbar
         setSupportActionBar(mToolbar);
@@ -53,15 +62,26 @@ public class DetailActivity extends AppCompatActivity {
                 .into(mImageView_Shop);
 
         //TextView
-        mTextView_ShopName.setText(shopName);
+        mTextView_ShopName.setText(getDetailContent(mealName, shopNum));
 
         //ViewPage
-        ArrayList<Integer> imgList = getImageList(shopNum);
+        ArrayList<Integer> imgList = getImageList(mealName, shopNum);
         ImageSlideAdapter adapter = new ImageSlideAdapter(getSupportFragmentManager(), imgList);
         mViewPager_Slideshow.setAdapter(adapter);
     }
 
     private void initialize() {
+        mealList = new HashMap<>();
+        String[][] temp = {
+                {"breakfast", "早餐"},
+                {"lunch", "正餐"},
+                {"snack", "小吃"},
+                {"supper", "宵夜"},
+                {"drink", "飲料"}
+        };
+        for (String[] meal : temp) {
+            mealList.put(meal[0], meal[1]);
+        }
         mToolbar = findViewById(R.id.detail_Toolbar);
         mImageView_Shop = findViewById(R.id.shop_thumbnail);
         mTextView_ShopName = findViewById(R.id.detail_shopName);
@@ -81,7 +101,41 @@ public class DetailActivity extends AppCompatActivity {
         supportFinishAfterTransition();
     }
 
-    private ArrayList<Integer> getImageList(int shopNum) {
+    private String getDetailContent(String mealName, int shopNum) {
+        if (mealName.equals("cat")) return "cat";
+
+        StringBuilder contentBuilder = new StringBuilder();
+
+
+        ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
+        mDbHelper.createDatabase();
+        mDbHelper.open();
+
+        Cursor shopData;
+        String sqlCmd;
+        String colTemp;
+        int colIndex = 0;
+        try {
+            sqlCmd = "SELECT * FROM " + mealList.get(mealName) + " WHERE rowId = " + shopNum;
+            Log.d("DetailActivity",sqlCmd);
+            shopData = mDbHelper.getDataBySQL(sqlCmd);
+            for (String column : shopData.getColumnNames()) {
+                colTemp = shopData.getString(colIndex);
+                if (!colTemp.equals(null)) {
+                    contentBuilder.append(column).append("：").append(colTemp).append("\n");
+                }
+                colIndex++;
+            }
+        } catch (Exception e) {
+            Log.e("getDetailContent", "Exception = " + e);
+        }
+
+
+        this.deleteDatabase("ShopDataBase.sqlite");
+        return contentBuilder.toString();
+    }
+
+    private ArrayList<Integer> getImageList(String mealName, int shopNum) {
         ArrayList<Integer> imgList = new ArrayList<>();
 
         int shopImgID;
@@ -90,7 +144,7 @@ public class DetailActivity extends AppCompatActivity {
         StringBuilder imgName = new StringBuilder();
         do {
             imgName.setLength(0);
-            imgName.append("breakfast_")
+            imgName.append(mealName).append("_")
                     .append(String.format(Locale.CHINESE, "%03d", shopNum))
                     .append(String.format(Locale.CHINESE, "_%02d", imgIndex));
             shopImgID = getShopImgID(imgName.toString());
@@ -116,5 +170,9 @@ public class DetailActivity extends AppCompatActivity {
             Log.d("test.getShopImgID", "e=" + e);
         }
         return (resID > 0 ? resID : R.drawable.cat);
+    }
+
+    private String getMealName(String url) {
+        return url.substring(url.indexOf("/") + 1, url.length() - 7);
     }
 }

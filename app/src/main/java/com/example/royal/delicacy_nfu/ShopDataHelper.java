@@ -49,8 +49,6 @@ public class ShopDataHelper extends SQLiteOpenHelper {
         boolean mDataBaseExist = checkDataBase();
         if(!mDataBaseExist)
         {
-            this.getReadableDatabase();
-            this.close();
             try
             {
                 //Copy the database from assests
