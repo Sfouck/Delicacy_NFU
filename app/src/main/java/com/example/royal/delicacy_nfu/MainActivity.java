@@ -8,8 +8,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.SearchRecentSuggestions;
 import android.support.design.widget.NavigationView;
@@ -28,10 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewAnimationUtils;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
-import android.view.animation.TranslateAnimation;
+import android.view.inputmethod.InputMethodManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +46,7 @@ public class MainActivity extends AppCompatActivity
     private MainViewAdapter mMainViewAdapter;
     private SearchView mSearchView;
     private HashMap<String, String> mealList;
+    private ShopDataAdapter mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +63,6 @@ public class MainActivity extends AppCompatActivity
         //Main View
         GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
         mRecyclerList.setLayoutManager(layoutManager);
-        setMainView("早餐");
 
         //Drawer
         mDrawerToggle = new ActionBarDrawerToggle(
@@ -98,13 +93,11 @@ public class MainActivity extends AppCompatActivity
         mRecyclerList = findViewById(R.id.main_view);
         mDrawerLayout = findViewById(R.id.drawer_layout);
         mNavigationView = findViewById(R.id.nav_view);
-        ArrayList<String> emptyList = new ArrayList<>();
-        emptyList.add("0");
-        emptyList.add("space");
-        emptyList.add(String.valueOf(R.drawable.cat));
-        List<ArrayList<String>> dataList = new ArrayList<>();
-        dataList.add(emptyList);
-        mMainViewAdapter = new MainViewAdapter(dataList);
+
+        this.deleteDatabase("ShopDataBase.sqlite");
+        mDbHelper = new ShopDataAdapter(this);
+        mDbHelper.createDatabase();
+        mMainViewAdapter = new MainViewAdapter(getShopData("早餐"));
         mRecyclerList.setAdapter(mMainViewAdapter);
     }
 
@@ -135,19 +128,10 @@ public class MainActivity extends AppCompatActivity
             SearchRecentSuggestions suggestions = new SearchRecentSuggestions(getApplicationContext(),
                     ShopSearchSuggestions.AUTHORITY, ShopSearchSuggestions.MODE);
             suggestions.saveRecentQuery(searchQuery, null);
+            hideSoftKeyboard();
             mMainViewAdapter.update(searchShopByName(searchQuery));
-        } else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
-            Log.d(TAG, "handleIntent: ACTION_VIEW");
-            Uri detailUri = intent.getData();
-
-            try {
-                Log.d("handleIntent", intent.getData().toString());
-                long id = Long.parseLong(detailUri.getLastPathSegment());
-                Log.d("handleIntent", id + "");
-            } catch (Exception e) {
-                Log.e(TAG, e.toString());
-            }
-        }else {
+//        } else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+        } else {
             Log.d(TAG, "ACTION is " + intent.getAction());
         }
     }
@@ -188,7 +172,6 @@ public class MainActivity extends AppCompatActivity
 
                 @Override
                 public boolean onQueryTextChange(String newText) {
-                    Snackbar.make(findViewById(R.id.main_view), newText, Snackbar.LENGTH_SHORT).show();
                     return true;
                 }
             };
@@ -221,9 +204,8 @@ public class MainActivity extends AppCompatActivity
         mGatchaItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                Intent intent = new Intent(getApplicationContext(),GatchaActivity.class);
+                Intent intent = new Intent(getApplicationContext(), GatchaActivity.class);
                 startActivity(intent);
-//                Snackbar.make(findViewById(R.id.drawer_layout), "gatchatest", Snackbar.LENGTH_SHORT).show();
                 return true;
             }
         });
@@ -241,12 +223,16 @@ public class MainActivity extends AppCompatActivity
                 setMainView("早餐");
                 break;
             case R.id.nav_lunch:
+                setMainView("正餐");
                 break;
             case R.id.nav_dessert:
+                //setMainView("小吃");
                 break;
             case R.id.nav_night:
+                setMainView("宵夜");
                 break;
             case R.id.nav_drink:
+                setMainView("飲料");
                 break;
         }
 
@@ -263,8 +249,6 @@ public class MainActivity extends AppCompatActivity
         String[] queryList = query.trim().split(" ");
         int querySize = queryList.length;
 
-        ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
-        mDbHelper.createDatabase();
         mDbHelper.open();
 
         for (Map.Entry<String, String> meal : mealList.entrySet()) {
@@ -272,13 +256,13 @@ public class MainActivity extends AppCompatActivity
                 if (querySize > 1) {
                     sqlCmd = "SELECT _ID,店名 FROM " + meal.getKey()
                             + " WHERE 店名 LIKE '%" + queryList[0].trim() + "%'";
-                    for (int i=1;i<querySize;i++){
+                    for (int i = 1; i < querySize; i++) {
                         sqlCmd += ("OR 店名 LIKE '%" + queryList[i] + "%'");
                     }
-                }else if (querySize == 1){
+                } else if (querySize == 1) {
                     sqlCmd = "SELECT _ID,店名 FROM " + meal.getKey()
                             + " WHERE 店名 LIKE '%" + query.trim() + "%'";
-                }else{
+                } else {
                     sqlCmd = "SELECT _ID,店名 FROM 早餐";
                 }
 
@@ -305,15 +289,12 @@ public class MainActivity extends AppCompatActivity
         }
 
         mDbHelper.close();
-        this.deleteDatabase("ShopDataBase.sqlite");
         return searchResult;
     }
 
     private List<ArrayList<String>> getShopData(String meal) {
         List<ArrayList<String>> DataSet = new ArrayList<>();
 
-        ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
-        mDbHelper.createDatabase();
         mDbHelper.open();
         Cursor shopdata = mDbHelper.getTableData(meal);
 
@@ -321,7 +302,7 @@ public class MainActivity extends AppCompatActivity
             String shopName;
             int shopImgID;
             int rowIndex;
-            ArrayList<String> rowValue ;
+            ArrayList<String> rowValue;
             shopdata.moveToFirst();
             do {
                 rowValue = new ArrayList<>();
@@ -337,7 +318,6 @@ public class MainActivity extends AppCompatActivity
         }
 
         mDbHelper.close();
-        this.deleteDatabase("ShopDataBase.sqlite");
         return DataSet;
     }
 
@@ -354,7 +334,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setMainView(String meal) {
-        mMainViewAdapter.update(getShopData(meal));
+        List<ArrayList<String>> shopData = getShopData(meal);
+        mMainViewAdapter.update(shopData);
     }
 
     public void animateSearchToolbar(int numberOfMenuIcon, boolean containsOverflow, boolean show) {
@@ -363,63 +344,29 @@ public class MainActivity extends AppCompatActivity
         mDrawerLayout.setStatusBarBackgroundColor(ContextCompat.getColor(this, R.color.quantum_grey_600));
 
         if (show) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                int width = mToolbar.getWidth() -
-                        (containsOverflow ? getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_overflow_material) : 0) -
-                        ((getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_material) * numberOfMenuIcon) / 2);
-                Animator createCircularReveal = ViewAnimationUtils.createCircularReveal(mToolbar,
-                        isRtl(getResources()) ? mToolbar.getWidth() - width : width, mToolbar.getHeight() / 2, 0.0f, (float) width);
-                createCircularReveal.setDuration(250);
-                createCircularReveal.start();
-            } else {
-                TranslateAnimation translateAnimation = new TranslateAnimation(0.0f, 0.0f, (float) (-mToolbar.getHeight()), 0.0f);
-                translateAnimation.setDuration(220);
-                mToolbar.clearAnimation();
-                mToolbar.startAnimation(translateAnimation);
-            }
+            int width = mToolbar.getWidth() -
+                    (containsOverflow ? getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_overflow_material) : 0) -
+                    ((getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_material) * numberOfMenuIcon) / 2);
+            Animator createCircularReveal = ViewAnimationUtils.createCircularReveal(mToolbar,
+                    isRtl(getResources()) ? mToolbar.getWidth() - width : width, mToolbar.getHeight() / 2, 0.0f, (float) width);
+            createCircularReveal.setDuration(250);
+            createCircularReveal.start();
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                int width = mToolbar.getWidth() -
-                        (containsOverflow ? getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_overflow_material) : 0) -
-                        ((getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_material) * numberOfMenuIcon) / 2);
-                Animator createCircularReveal = ViewAnimationUtils.createCircularReveal(mToolbar,
-                        isRtl(getResources()) ? mToolbar.getWidth() - width : width, mToolbar.getHeight() / 2, (float) width, 0.0f);
-                createCircularReveal.setDuration(250);
-                createCircularReveal.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        super.onAnimationEnd(animation);
-                        mToolbar.setBackgroundColor(getThemeColor(MainActivity.this, R.attr.colorPrimary));
-                        mDrawerLayout.setStatusBarBackgroundColor(getThemeColor(MainActivity.this, R.attr.colorPrimaryDark));
-                    }
-                });
-                createCircularReveal.start();
-            } else {
-                AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
-                Animation translateAnimation = new TranslateAnimation(0.0f, 0.0f, 0.0f, (float) (-mToolbar.getHeight()));
-                AnimationSet animationSet = new AnimationSet(true);
-                animationSet.addAnimation(alphaAnimation);
-                animationSet.addAnimation(translateAnimation);
-                animationSet.setDuration(220);
-                animationSet.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        mToolbar.setBackgroundColor(getThemeColor(MainActivity.this, R.attr.colorPrimary));
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-                mToolbar.startAnimation(animationSet);
-            }
-
+            int width = mToolbar.getWidth() -
+                    (containsOverflow ? getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_overflow_material) : 0) -
+                    ((getResources().getDimensionPixelSize(R.dimen.abc_action_button_min_width_material) * numberOfMenuIcon) / 2);
+            Animator createCircularReveal = ViewAnimationUtils.createCircularReveal(mToolbar,
+                    isRtl(getResources()) ? mToolbar.getWidth() - width : width, mToolbar.getHeight() / 2, (float) width, 0.0f);
+            createCircularReveal.setDuration(250);
+            createCircularReveal.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    mToolbar.setBackgroundColor(getThemeColor(MainActivity.this, R.attr.colorPrimary));
+                    mDrawerLayout.setStatusBarBackgroundColor(getThemeColor(MainActivity.this, R.attr.colorPrimaryDark));
+                }
+            });
+            createCircularReveal.start();
             getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.transparent));
         }
     }
@@ -437,4 +384,15 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+    private void hideSoftKeyboard(){
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            try{
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);}
+            catch (Exception e){
+                Log.d("hideSoftKeyboard","e"+e);
+            }
+        }
+    }
 }

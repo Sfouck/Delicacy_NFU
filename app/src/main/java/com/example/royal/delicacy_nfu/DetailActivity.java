@@ -25,7 +25,6 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mTextView_ShopName;
     private ImageView mImageView_Shop;
     private ViewPager mViewPager_Slideshow;
-    private ShopDataAdapter mDbHelper;
     private HashMap<String, String> mealList;
 
     @Override
@@ -86,8 +85,7 @@ public class DetailActivity extends AppCompatActivity {
         mImageView_Shop = findViewById(R.id.shop_thumbnail);
         mTextView_ShopName = findViewById(R.id.detail_shopName);
         mViewPager_Slideshow = findViewById(R.id.shop_image_slider);
-        mDbHelper = new ShopDataAdapter(this);
-        mDbHelper.createDatabase();
+        this.deleteDatabase("ShopDataBase.sqlite");
     }
 
     @Override
@@ -121,7 +119,7 @@ public class DetailActivity extends AppCompatActivity {
             shopData = mDbHelper.getDataBySQL(sqlCmd);
             for (String column : shopData.getColumnNames()) {
                 colTemp = shopData.getString(colIndex);
-                if (!colTemp.equals(null)) {
+                if (!colTemp.equals(null) || !colTemp.equals("")) {
                     contentBuilder.append(column).append("：").append(colTemp).append("\n");
                 }
                 colIndex++;

@@ -6,8 +6,6 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
-import java.io.IOException;
-
 /**
  * Created by user on 2017/11/10.
  */
@@ -27,7 +25,7 @@ public class ShopDataAdapter {
     public ShopDataAdapter createDatabase() throws SQLException {
         try {
             mDbHelper.createDataBase();
-        } catch (IOException mIOException) {
+        } catch (Exception mIOException) {
             Log.e(TAG, mIOException.toString() + "  UnableToCreateDatabase");
             throw new Error("UnableToCreateDatabase");
         }
@@ -54,7 +52,7 @@ public class ShopDataAdapter {
 
     public Cursor getTableData(String mealName) {
         try {
-            String sql = "SELECT * FROM '" + mealName + "'";
+            String sql = "SELECT * FROM " + mealName;
 
             Cursor mCur = mDb.rawQuery(sql, null);
             if (mCur != null) {
@@ -69,9 +67,7 @@ public class ShopDataAdapter {
 
     public Cursor getDataBySQL(String sqlCmd){
         try {
-//            mDb.beginTransaction();
             Cursor mCur = mDb.rawQuery(sqlCmd, null);
-//            mDb.endTransaction();
             if (mCur != null) {
                 mCur.moveToFirst();
             }
