@@ -12,8 +12,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
 
 
 /**
@@ -25,7 +23,7 @@ public class DetailActivity extends AppCompatActivity {
     private TextView mTextView_ShopName;
     private ImageView mImageView_Shop;
     private ViewPager mViewPager_Slideshow;
-    private HashMap<String, String> mealList;
+    private ShopDataUtil mShopDataUtil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,15 +34,9 @@ public class DetailActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         int shopNum = intent.getIntExtra("ShopNumber", 0);
-        String shopName = intent.getStringExtra("ShopName");
         int imageID = intent.getIntExtra("ShopImage", R.drawable.cat);
-        String mealName;
-        if (imageID == R.drawable.cat) {
-            mealName = "cat";
-        } else {
-            mealName = getMealName(getResources().getResourceName(imageID));
-        }
-        Log.d("mealName", mealName);
+        String shopName = intent.getStringExtra("ShopName");
+        String mealName = intent.getStringExtra("MealName");
 
         //Toolbar
         setSupportActionBar(mToolbar);
@@ -67,25 +59,17 @@ public class DetailActivity extends AppCompatActivity {
         ArrayList<Integer> imgList = getImageList(mealName, shopNum);
         ImageSlideAdapter adapter = new ImageSlideAdapter(getSupportFragmentManager(), imgList);
         mViewPager_Slideshow.setAdapter(adapter);
+
+        mImageView_Shop.setImageAlpha(50);
+
     }
 
     private void initialize() {
-        mealList = new HashMap<>();
-        String[][] temp = {
-                {"breakfast", "早餐"},
-                {"lunch", "正餐"},
-                {"snack", "小吃"},
-                {"supper", "宵夜"},
-                {"drink", "飲料"}
-        };
-        for (String[] meal : temp) {
-            mealList.put(meal[0], meal[1]);
-        }
+        mShopDataUtil = new ShopDataUtil(getApplicationContext());
         mToolbar = findViewById(R.id.detail_Toolbar);
         mImageView_Shop = findViewById(R.id.shop_thumbnail);
         mTextView_ShopName = findViewById(R.id.detail_shopName);
         mViewPager_Slideshow = findViewById(R.id.shop_image_slider);
-        this.deleteDatabase("ShopDataBase.sqlite");
     }
 
     @Override
@@ -102,24 +86,22 @@ public class DetailActivity extends AppCompatActivity {
     private String getDetailContent(String mealName, int shopNum) {
         if (mealName.equals("cat")) return "cat";
 
-        StringBuilder contentBuilder = new StringBuilder();
-
-
         ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
         mDbHelper.createDatabase();
         mDbHelper.open();
 
+        StringBuilder contentBuilder = new StringBuilder();
         Cursor shopData;
         String sqlCmd;
         String colTemp;
         int colIndex = 0;
         try {
-            sqlCmd = "SELECT * FROM " + mealList.get(mealName) + " WHERE rowId = " + shopNum;
+            sqlCmd = "SELECT * FROM " + mealName + " WHERE rowId = " + shopNum;
             Log.d("DetailActivity",sqlCmd);
             shopData = mDbHelper.getDataBySQL(sqlCmd);
             for (String column : shopData.getColumnNames()) {
                 colTemp = shopData.getString(colIndex);
-                if (!colTemp.equals(null) || !colTemp.equals("")) {
+                if (colTemp != null) {
                     contentBuilder.append(column).append("：").append(colTemp).append("\n");
                 }
                 colIndex++;
@@ -128,8 +110,7 @@ public class DetailActivity extends AppCompatActivity {
             Log.e("getDetailContent", "Exception = " + e);
         }
 
-
-        this.deleteDatabase("ShopDataBase.sqlite");
+        mDbHelper.close();
         return contentBuilder.toString();
     }
 
@@ -139,13 +120,8 @@ public class DetailActivity extends AppCompatActivity {
         int shopImgID;
         int imgIndex = 1;
         int errorCount = 0;
-        StringBuilder imgName = new StringBuilder();
         do {
-            imgName.setLength(0);
-            imgName.append(mealName).append("_")
-                    .append(String.format(Locale.CHINESE, "%03d", shopNum))
-                    .append(String.format(Locale.CHINESE, "_%02d", imgIndex));
-            shopImgID = getShopImgID(imgName.toString());
+            shopImgID = mShopDataUtil.getShopImgID(mealName,shopNum,imgIndex);
             Log.d("slideGetImageList", shopImgID + "");
             if (shopImgID != R.drawable.cat) {
                 imgList.add(shopImgID);
@@ -157,20 +133,5 @@ public class DetailActivity extends AppCompatActivity {
         } while (errorCount < 100);
         Log.d("slideGetImageList", imgList.size() + "");
         return imgList;
-    }
-
-    private int getShopImgID(String name) {
-        int resID = 0;
-        try {
-            resID = getResources().getIdentifier(
-                    name, "drawable", getApplicationInfo().packageName);
-        } catch (Exception e) {
-            Log.d("test.getShopImgID", "e=" + e);
-        }
-        return (resID > 0 ? resID : R.drawable.cat);
-    }
-
-    private String getMealName(String url) {
-        return url.substring(url.indexOf("/") + 1, url.length() - 7);
     }
 }

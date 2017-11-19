@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Delicacy_NFU</string>
+    <string name="app_name">虎尾瘋美食</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -15,4 +15,5 @@
     <string name="search_hint">搜尋</string>
     <string name="toolbar_title_gatcha">美食抽抽樂</string>
     <string name="gatcha_button_title">開抽</string>
+    <string name="nav_header_title">虎尾在地美食</string>
 </resources>

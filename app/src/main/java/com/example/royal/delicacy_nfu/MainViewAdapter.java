@@ -49,13 +49,13 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
         final Integer shopNumber = Integer.valueOf(dataList.get(position).get(0));
         final String shopName = dataList.get(position).get(1);
         final Integer imageID = Integer.valueOf(dataList.get(position).get(2));
+        final String mealName = dataList.get(position).get(3);
 
         holder.mTextView.setText(shopName);
 
         GlideApp.with(holder.itemView.getContext())
                 .load(imageID)
                 .error(R.drawable.cat)
-                .placeholder(R.drawable.ic_action_gatcha)
                 .thumbnail(0.1f)
                 .centerCrop()
                 .fitCenter()
@@ -70,6 +70,7 @@ public class MainViewAdapter extends RecyclerView.Adapter<MainViewAdapter.MyView
                 intent.putExtra("ShopNumber", shopNumber);
                 intent.putExtra("ShopName", shopName);
                 intent.putExtra("ShopImage", imageID);
+                intent.putExtra("MealName", mealName);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     String trans = mContext.getResources().getString(R.string.picture_transition_name);

@@ -14,9 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Random;
 
 /**
@@ -28,8 +26,9 @@ public class GatchaActivity extends AppCompatActivity implements OnItemSelectedL
     private Spinner mSpinner;
     private Button mGatchaButton;
     private ShopDataAdapter mDbHelper;
-    private HashMap<String, String> mealList;
     private String selectedMealName;
+    private ShopDataUtil mShopDataUtil;
+    HashMap<String,String> mealList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,12 +58,22 @@ public class GatchaActivity extends AppCompatActivity implements OnItemSelectedL
         mGatchaButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(),DetailActivity.class);
-                String[] shopData = getRandomShopData(selectedMealName).split(",");
-                intent.putExtra("ShopNumber",Integer.valueOf(shopData[0]));
-                intent.putExtra("ShopName",shopData[1]);
+                //新增一個意圖(Intent)物件
+                Intent intent = new Intent();
+                String intentMealName = mShopDataUtil.getENGMealNameByCHS(selectedMealName);
+                //隨機拿一個商店的資料
+                String[] shopData = getRandomShopData(intentMealName).split(",");
+                //設定去哪
+                intent.setClass(getApplicationContext(), DetailActivity.class);
+                //放入資料
+                intent.putExtra("ShopNumber", Integer.valueOf(shopData[0]));
+                intent.putExtra("ShopName", shopData[1]);
                 intent.putExtra("ShopImage",
-                        getShopImgID(mealList.get(selectedMealName),Integer.valueOf(shopData[0]),1));
+                        mShopDataUtil.getShopImgID(
+                                intentMealName, Integer.valueOf(shopData[0]), 1));
+                intent.putExtra("MealName",intentMealName);
+
+                //把intent傳給詳細資料版面Activity
                 startActivity(intent);
             }
         });
@@ -72,23 +81,14 @@ public class GatchaActivity extends AppCompatActivity implements OnItemSelectedL
     }
 
     private void initialize() {
-        mealList = new HashMap<>();
-        String[][] temp = {
-                {"breakfast", "早餐"},
-                {"lunch", "正餐"},
-                {"snack", "小吃"},
-                {"supper", "宵夜"},
-                {"drink", "飲料"}
-        };
-        for (String[] meal : temp) {
-            mealList.put(meal[1], meal[0]);
-        }
+        mShopDataUtil = new ShopDataUtil(getApplicationContext());
+        mealList = mShopDataUtil.getMealList();
         mToolbar = findViewById(R.id.gatcha_Toolbar);
         mDbHelper = new ShopDataAdapter(this);
         mDbHelper.createDatabase();
         mSpinner = findViewById(R.id.shops_spinner);
         mGatchaButton = findViewById(R.id.gatcha_button);
-        selectedMealName= "";
+        selectedMealName = "";
     }
 
     public void onItemSelected(AdapterView<?> parent, View view,
@@ -113,27 +113,27 @@ public class GatchaActivity extends AppCompatActivity implements OnItemSelectedL
         supportFinishAfterTransition();
     }
 
-    private String getRandomShopData(String mealName){
+    private String getRandomShopData(String mealName) {
         ShopDataAdapter mDbHelper = new ShopDataAdapter(this);
         mDbHelper.createDatabase();
         mDbHelper.open();
 
         Cursor shopData;
         String sqlCmd;
-        HashMap<String,String> rowTemp = new HashMap<>();
-        int rowCount =0;
+        HashMap<String, String> rowTemp = new HashMap<>();
+        int rowCount = 0;
         String result = "0,cat";
         try {
             sqlCmd = "SELECT _ID,店名 FROM " + mealName;
             shopData = mDbHelper.getDataBySQL(sqlCmd);
             shopData.moveToFirst();
             do {
-                rowTemp.put(shopData.getString(0),shopData.getString(1));
+                rowTemp.put(shopData.getString(0), shopData.getString(1));
                 rowCount++;
-            }while (shopData.moveToNext());
+            } while (shopData.moveToNext());
 
-            String randomShopNum = String.valueOf((new Random()).nextInt(rowCount)+1);
-            result=randomShopNum +","+rowTemp.get(randomShopNum);
+            String randomShopNum = String.valueOf((new Random()).nextInt(rowCount) + 1);
+            result = randomShopNum + "," + rowTemp.get(randomShopNum);
         } catch (Exception e) {
             Log.e("getDetailContent", "Exception = " + e);
         }
@@ -141,42 +141,5 @@ public class GatchaActivity extends AppCompatActivity implements OnItemSelectedL
 
         this.deleteDatabase("ShopDataBase.sqlite");
         return result;
-    }
-
-    private ArrayList<Integer> getImageList(String mealName, int shopNum) {
-        ArrayList<Integer> imgList = new ArrayList<>();
-
-        int shopImgID;
-        int imgIndex = 1;
-        int errorCount = 0;
-        do {
-            shopImgID = getShopImgID(mealName,shopNum,imgIndex);
-            Log.d("slideGetImageList", shopImgID + "");
-            if (shopImgID != R.drawable.cat) {
-                imgList.add(shopImgID);
-            } else {
-                break;
-            }
-            imgIndex++;
-            errorCount++;
-        } while (errorCount < 100);
-        Log.d("slideGetImageList", imgList.size() + "");
-        return imgList;
-    }
-
-    private int getShopImgID(String meal, int index, int num) {
-        int resID = 0;
-        String path = meal + "_" + String.format(Locale.CHINESE, "%03d", index)
-                + "_" + String.format(Locale.CHINESE, "%02d", num);
-        try {
-            resID = getResources().getIdentifier(path, "drawable", getApplicationInfo().packageName);
-        } catch (Exception e) {
-            Log.d("test.getShopImgID", "e=" + e);
-        }
-        return (resID > 0 ? resID : R.drawable.cat);
-    }
-
-    private String getMealName(String url) {
-        return url.substring(url.indexOf("/") + 1, url.length() - 7);
     }
 }

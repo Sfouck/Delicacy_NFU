@@ -68,7 +68,7 @@ public class ShopDataHelper extends SQLiteOpenHelper {
             try {
                 File dir = new File(DB_PATH);
                 dir.mkdirs();
-                Log.e(TAG, "createDatabase database created");
+                Log.e(TAG, "createDataBaseFolder Folder created");
             } catch (Exception mException) {
                 throw new Error(mException);
             }
