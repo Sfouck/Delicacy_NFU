@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 
 /**
@@ -24,6 +25,7 @@ public class DetailActivity extends AppCompatActivity {
     private ImageView mImageView_Shop;
     private ViewPager mViewPager_Slideshow;
     private ShopDataUtil mShopDataUtil;
+    private HashMap<String,String> mealList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +72,7 @@ public class DetailActivity extends AppCompatActivity {
         mImageView_Shop = findViewById(R.id.shop_thumbnail);
         mTextView_ShopName = findViewById(R.id.detail_shopName);
         mViewPager_Slideshow = findViewById(R.id.shop_image_slider);
+        mealList = mShopDataUtil.getMealList();
     }
 
     @Override

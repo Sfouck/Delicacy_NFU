@@ -245,7 +245,7 @@ public class MainActivity extends AppCompatActivity
 
         mDbHelper.open();
 
-        for (String mealName:mealList.keySet()) {
+        for (String mealName : mealList.keySet()) {
             try {
                 if (querySize > 1) {
                     sqlCmd = "SELECT _ID,店名 FROM " + mealName
@@ -368,14 +368,14 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    private void hideSoftKeyboard(){
+    private void hideSoftKeyboard() {
         View view = this.getCurrentFocus();
         if (view != null) {
-            try{
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);}
-            catch (Exception e){
-                Log.d("hideSoftKeyboard","e"+e);
+            try {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            } catch (Exception e) {
+                Log.d("hideSoftKeyboard", "e" + e);
             }
         }
     }
