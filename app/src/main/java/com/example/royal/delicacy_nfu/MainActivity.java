@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity
 
         //Navigation
         mNavigationView.setNavigationItemSelectedListener(this);
+        mNavigationView.setItemIconTintList(null);
 
         //Intent
         handleIntent(getIntent());
